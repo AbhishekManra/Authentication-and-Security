@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption");
+const md5 = require("md5"); // we installed the package naem md5 for [ Hashing of the passwords that can not be reverted back to orignal password ]
 
 app.set("view engine" , "ejs");
 app.use(express.static("public"));
@@ -16,9 +16,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/AuthDB2');
 const userSchema = new mongoose.Schema({
     email : String,
     password : String
-});
-
-userSchema.plugin(encrypt,{secret:process.env.SECRET , encryptedFields : ["password"]});
+}); 
 
 const User = new mongoose.model("User" , userSchema); // our mongoose model alike which we will create new documents.
 
@@ -35,7 +33,7 @@ app.get("/register",function(req,res){
 app.post("/register",function(req,res){
     const newuser = new User({
         email : req.body.username,
-        password : req.body.password
+        password : md5(req.body.password) // we converted the password into a hash 
     });
     newuser.save(function(err){
         if(err){
@@ -48,7 +46,7 @@ app.post("/register",function(req,res){
 
 app.post("/login",function(req,res){
     const a = req.body.username;
-    const b = req.body.password;
+    const b = md5(req.body.password);
     User.findOne({email : a},function(err,result){
         if(err){
             console.log(err);
