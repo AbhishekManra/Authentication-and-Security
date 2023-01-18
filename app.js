@@ -4,7 +4,12 @@ const bodyParser = require("body-parser");
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const md5 = require("md5"); // we installed the package naem md5 for [ Hashing of the passwords that can not be reverted back to orignal password ]
+const bcrypt = require("bcrypt"); 
+// we installed yet another package namely 'bcrypt' which will allow us to hash our passwords
+// We salt our password so that it will become more back-breaking for the any hacker.
+const saltrounds = 10;
+// salting mean adding a random hash to our orignal hash
+// bcrypt allow us to use salting rounds.
 
 app.set("view engine" , "ejs");
 app.use(express.static("public"));
@@ -31,31 +36,33 @@ app.get("/register",function(req,res){
 });
 
 app.post("/register",function(req,res){
-    const newuser = new User({
-        email : req.body.username,
-        password : md5(req.body.password) // we converted the password into a hash 
-    });
-    newuser.save(function(err){
-        if(err){
-            console.log(err);
-        }else{
-            res.render("secrets");
-        }
+    bcrypt.hash(req.body.password, saltrounds, function(err, hash) { // hash = it is our new hash key after 10 rounds of salting
+        const newuser = new User({
+            email : req.body.username,
+            password : hash 
+        });
+        newuser.save(function(err){
+            if(err){
+                console.log(err);
+            }else{
+                res.render("secrets");
+            }
+        });
     });
 });
 
 app.post("/login",function(req,res){
-    const a = req.body.username;
-    const b = md5(req.body.password);
-    User.findOne({email : a},function(err,result){
+    User.findOne({email : req.body.username},function(err,result){
         if(err){
             console.log(err);
         }else{
-            if(result.password === b){
+            bcrypt.compare(req.body.password, result.password, function(err, result1) {
+               if(result1 === true){ 
                 res.render("secrets");
-            }else{
-                res.send("Wrong Password");
-            }
+               }else{
+                console.log(err);
+               }
+            });
         }
     });
 });
