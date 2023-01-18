@@ -1,8 +1,10 @@
 //jshint esversion:6
+require('dotenv').config();
 const bodyParser = require("body-parser");
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const encrypt = require("mongoose-encryption");
 
 app.set("view engine" , "ejs");
 app.use(express.static("public"));
@@ -10,10 +12,13 @@ app.use(bodyParser.urlencoded({extended:true}));
 
 mongoose.connect('mongodb://127.0.0.1:27017/AuthDB2');
 
-const userSchema = {
+// creating a full mongoose schema
+const userSchema = new mongoose.Schema({
     email : String,
     password : String
-}
+});
+
+userSchema.plugin(encrypt,{secret:process.env.SECRET , encryptedFields : ["password"]});
 
 const User = new mongoose.model("User" , userSchema); // our mongoose model alike which we will create new documents.
 
